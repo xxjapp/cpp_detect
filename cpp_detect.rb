@@ -11,10 +11,18 @@
 # Examples:
 #   ruby ./cpp_detect.rb src include
 #
+# TODO:
+#   - add options to replace in place
+#
 
 require 'find'
 require 'fileutils'
 require 'open3'
+
+CLEAN_MAKE_CMD  = 'make clean && make'
+MAKE_CMD        = 'make'
+
+@in_place = true
 
 def is_cpp_source_file(file)
     extname = File.extname(file)
@@ -28,16 +36,22 @@ def is_cpp_source_file(file)
 end
 
 def test_clean_make()
-    stdin, stdout, stderr = Open3.popen3('make clean && make')
+    stdin, stdout, stderr = Open3.popen3(CLEAN_MAKE_CMD)
     errors = stderr.readlines
     $stderr.puts errors if errors.size > 0
     return errors.size == 0
 end
 
 def test_make()
-    stdin, stdout, stderr = Open3.popen3('make')
+    stdin, stdout, stderr = Open3.popen3(MAKE_CMD)
     errors = stderr.readlines
     return errors.size == 0
+end
+
+def write_to_file(lines, file)
+    File.open(file, 'w') do |f|
+        f.puts(lines)
+    end
 end
 
 def parse_file(file)
@@ -46,9 +60,10 @@ def parse_file(file)
     orig_file = file + '.orig'
     FileUtils.cp(file, orig_file)
 
-    orig_lines = IO.readlines(orig_file)
-    ok_lines   = Array.new(orig_lines)
-    i          = 0
+    orig_lines  = IO.readlines(orig_file)
+    ok_lines    = Array.new(orig_lines)
+    i           = 0
+    j           = 0
 
     while i < ok_lines.size
         line = ok_lines[i]
@@ -60,20 +75,24 @@ def parse_file(file)
 
         lines = Array.new(ok_lines)
         lines.delete_at(i)
-
-        File.open(file, 'w+') do |f|
-            f.puts(lines)
-        end
+        write_to_file(lines, file)
 
         if test_make()
-            $stderr.printf("    [removable] %s(%d): %s\n", file, i + 1, line.chomp)
+            $stderr.printf("    [#{@in_place ? 'removed' : 'removable'}] %s(%d): %s\n", file, i + j + 1, line.chomp)
             ok_lines = lines
+            j += 1
         else
             i += 1
         end
     end
 
-    FileUtils.mv(orig_file, file)
+    if @in_place
+        write_to_file(ok_lines, file)
+        FileUtils.rm_f(orig_file)
+    else
+        FileUtils.mv(orig_file, file)
+        FileUtils.touch(file)
+    end
 end
 
 def main(argv)
