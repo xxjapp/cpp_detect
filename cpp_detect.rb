@@ -50,14 +50,15 @@ def parse_file(file)
             next
         end
 
-        lines = Array.new(ok_lines).delete_at(i)
+        lines = Array.new(ok_lines)
+        lines.delete_at(i)
 
         File.open(file, 'w+') do |f|
             f.puts(lines)
         end
 
         if test_file(file)
-            printf("%04d: %s", i, line)
+            $stderr.printf("    [removable] %s(%d): %s\n", file, i + 1, line.chomp)
             ok_lines = lines
         else
             i += 1
@@ -77,4 +78,3 @@ end
 
 # run main
 main(ARGV)
-
