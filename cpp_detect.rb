@@ -27,9 +27,17 @@ def is_cpp_source_file(file)
            ].include?(extname)
 end
 
-def test_file(file)
+def test_clean_make()
+    stdin, stdout, stderr = Open3.popen3('make clean && make')
+    errors = stderr.readlines
+    $stderr.puts errors if errors.size > 0
+    return errors.size == 0
+end
+
+def test_make()
     stdin, stdout, stderr = Open3.popen3('make')
-    return stderr.readlines.size == 0
+    errors = stderr.readlines
+    return errors.size == 0
 end
 
 def parse_file(file)
@@ -57,7 +65,7 @@ def parse_file(file)
             f.puts(lines)
         end
 
-        if test_file(file)
+        if test_make()
             $stderr.printf("    [removable] %s(%d): %s\n", file, i + 1, line.chomp)
             ok_lines = lines
         else
@@ -69,6 +77,13 @@ def parse_file(file)
 end
 
 def main(argv)
+    if !test_clean_make()
+        $stderr.puts 'Make sure make successfully first'
+        return -1
+    end
+
+    argv = ['.'] if argv.size == 0
+
     argv.each { |dir|
         Find.find(dir) { |file|
             parse_file(file) if File.file?(file) && is_cpp_source_file(file)
