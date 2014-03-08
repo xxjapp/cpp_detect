@@ -2,7 +2,8 @@
 # encoding: UTF-8
 #
 # Features
-#   - clean c/c++ includes
+#   - detect unnecessary c/c++ includes
+#   - detect unnecessary using namespaces
 #
 # Usage:
 #   ruby ./cpp_detect.rb <source_dirs>
@@ -44,7 +45,7 @@ def parse_file(file)
     while i < ok_lines.size
         line = ok_lines[i]
 
-        if line !~ /^\s*#\s*include\s+/
+        if line !~ /^\s*#\s*include\s+/ && line !~ /^\s*using\s+namespace\s+/
             i += 1
             next
         end
