@@ -28,6 +28,7 @@ def is_cpp_source_file(file)
     extname = File.extname(file)
     return [
             '.h',
+            '.hpp',
             '.hxx',
             '.c',
             '.cpp',
