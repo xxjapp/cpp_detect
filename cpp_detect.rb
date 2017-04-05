@@ -11,9 +11,6 @@
 # Examples:
 #   ruby ./cpp_detect.rb src include
 #
-# TODO:
-#   - add options to replace in place
-#
 
 require 'find'
 require 'fileutils'
